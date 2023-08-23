@@ -4,11 +4,8 @@ import Player from "../models/player";
 const NflTeamController = {
   create: async (req: Request, res: Response) => {
     try {
-      console.log("entered");
       const team = new NflTeam({ ...req.body });
-      console.log("team", team);
       await team.save();
-      console.log("saved");
       return res.json({ team, msg: "Created nfl team" });
     } catch (e) {
       return res.json({
@@ -41,10 +38,7 @@ const NflTeamController = {
         where: { name },
       });
       if (!record) throw new Error("unablr to find a team with provided name");
-
       const players = record.players;
-      console.log("players", players);
-      players?.forEach((player) => console.log(player.name));
       res.json(record);
     } catch (e) {
       console.log(e);

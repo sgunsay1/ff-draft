@@ -32,8 +32,6 @@ const PlayerController = {
     try {
       const { id } = req.params;
       const record = await Player.findOne({ where: { id } });
-      console.log("team", record?.team);
-      console.log(record?.manager);
       res.json(record);
     } catch (e) {
       console.log("error:", e);
