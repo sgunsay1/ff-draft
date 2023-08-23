@@ -1,4 +1,4 @@
-import exxx, { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
 class Middlware {
   handleValidationError(req: Request, res: Response, next: NextFunction) {

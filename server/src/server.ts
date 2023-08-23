@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import db from "./config/db.config";
-import router from "./routes/todo";
+import { managerRoutes, nflTeamRoutes, playerRoutes } from "./routes";
 
 db.sync().then(() => {
   console.log("connected to db");
@@ -10,7 +10,9 @@ const app = express();
 const PORT = 3001;
 
 app.use(express.json());
-app.use(router);
+app.use("/manager", managerRoutes);
+app.use("/nfl-team", nflTeamRoutes);
+app.use("/player", playerRoutes);
 
 app.get("/", (req: Request, res: Response) => res.send("hello world"));
 
