@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import Manager from "../models/manager";
+import Player from "../models/player";
 const ManagerController = {
   create: async (req: Request, res: Response) => {
     try {
@@ -18,7 +19,7 @@ const ManagerController = {
 
   getAll: async (req: Request, res: Response) => {
     try {
-      const records = await Manager.findAll();
+      const records = await Manager.findAll({ include: [Player] });
       res.json(records);
     } catch (e) {
       return res.json({
@@ -34,7 +35,6 @@ const ManagerController = {
       const { id } = req.params;
       const record = await Manager.findOne({ where: { id } });
 
-      console.log("manager players: ", record?.players);
       res.json(record);
     } catch (e) {
       return res.json({

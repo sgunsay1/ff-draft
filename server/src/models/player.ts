@@ -1,5 +1,5 @@
 import db from "../config/db.config";
-import NflTeam from "./nflTeam";
+import NflTeam, { TeamName } from "./nflTeam";
 import Manager from "./manager";
 import {
   BelongsTo,
@@ -9,8 +9,34 @@ import {
   Table,
 } from "sequelize-typescript";
 
+export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
+
+export interface IPlayer {
+  wishlist: boolean;
+  price: number;
+  name: string;
+  adp: number;
+  position: Position;
+  totalPoints: number;
+  pointsPerGame: number;
+  gamesPlayed: number;
+  completions: number;
+  passYards: number;
+  passTds: number;
+  interceptions: number;
+  rushAttempts: number;
+  rushYards: number;
+  rushTds: number;
+  targets: number;
+  receptions: number;
+  recYards: number;
+  recTds: number;
+  fumbles: number;
+  teamName: TeamName;
+}
+
 @Table
-export default class Player extends Model {
+export default class Player extends Model implements IPlayer {
   @Column
   declare wishlist: boolean;
   @Column
@@ -20,7 +46,7 @@ export default class Player extends Model {
   @Column
   declare adp: number;
   @Column
-  declare position: string;
+  declare position: Position;
   @Column
   declare totalPoints: number;
   @Column
@@ -55,7 +81,7 @@ export default class Player extends Model {
   // NFL-Team associations
   @Column
   @ForeignKey(() => NflTeam)
-  declare teamName: string;
+  declare teamName: TeamName;
   @BelongsTo(() => NflTeam, "teamName")
   declare team: NflTeam;
 

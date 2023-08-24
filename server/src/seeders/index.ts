@@ -3,7 +3,7 @@ import db from "../config/db.config";
 import fs from "fs";
 import NflTeam from "../models/nflTeam";
 import Manager from "../models/manager";
-import Player from "../models/player";
+import Player, { Position } from "../models/player";
 
 db.sync().then(async () => {
   console.log("connected to db");
@@ -85,13 +85,16 @@ const generateAdp = () =>
           const player = await Player.findOne({ where: { name: row[1] } });
           if (player) {
             await player?.update({ teamName: row[2], adp: parseInt(row[0]) });
-          } else
+          } else {
+            const positions: Position[] = ["QB", "RB", "WR", "TE", "K", "DST"];
+            const position = positions.find((pos) => row[4].startsWith(pos));
             await new Player({
               adp: parseInt(row[0]),
               name: row[1],
               teamName: row[2],
-              position: row[4].slice(0, 2),
+              position,
             }).save();
+          }
         } catch (e) {
           console.error("error on " + row[1], e);
         }

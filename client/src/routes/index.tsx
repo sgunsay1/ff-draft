@@ -1,31 +1,45 @@
-import { A } from "solid-start";
-import Counter from "~/components/Counter";
+import { IManager } from "@models/manager";
+import axios from "axios";
+import { For } from "solid-js";
+import { A, createRouteData, useRouteData } from "solid-start";
+import TeamBox from "~/components/manager/TeamBox";
 
-export default function Home() {
+const SERVER = "http://127.0.0.1:3001";
+const BENCH_SIZE = 14;
+const TOTAL_BUDGET = 200;
+
+export const routeData = () => {
+  return createRouteData(async () => {
+    const response = await axios.get(`${SERVER}/manager`);
+    console.log("res", response);
+    return response.data as IManager[];
+  });
+};
+
+const Home = () => {
+  const managers = useRouteData<typeof routeData>();
+  console.log("managers", managers());
+
   return (
-    <main class="text-center mx-auto text-gray-700 p-4">
-      <h1 class="max-6-xs text-6xl text-sky-700 font-thin uppercase my-16">
-        Hello world!
-      </h1>
-      <Counter />
-      <p class="mt-8">
-        Visit{" "}
-        <a
-          href="https://solidjs.com"
-          target="_blank"
-          class="text-sky-600 hover:underline"
-        >
-          solidjs.com
-        </a>{" "}
-        to learn how to build Solid apps.
-      </p>
-      <p class="my-4">
-        <span>Home</span>
-        {" - "}
-        <A href="/about" class="text-sky-600 hover:underline">
-          About Page
-        </A>{" "}
-      </p>
-    </main>
+    <>
+      <div id="managerPane">
+        <For each={managers()}>
+          {(manager, i) => (
+            <TeamBox
+              benchSize={BENCH_SIZE}
+              totalBudget={TOTAL_BUDGET}
+              manager={manager}
+              players={manager.players ?? []}
+            />
+          )}
+        </For>
+      </div>
+      <div>
+        <div id="priceStrategy"></div>
+        <div id="playerTable"></div>
+      </div>
+    </>
   );
-}
+};
+
+export default Home;

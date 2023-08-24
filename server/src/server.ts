@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 import db from "./config/db.config";
 import { managerRoutes, nflTeamRoutes, playerRoutes } from "./routes";
-
 db.sync().then(() => {
   console.log("connected to db");
 });
@@ -9,6 +9,7 @@ db.sync().then(() => {
 const app = express();
 const PORT = 3001;
 
+app.use(cors());
 app.use(express.json());
 app.use("/manager", managerRoutes);
 app.use("/nfl-team", nflTeamRoutes);
