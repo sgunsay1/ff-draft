@@ -66,7 +66,7 @@ const generatePlayers = () =>
             receptions: parseInt(row[15]),
             recYards: parseInt(row[16]),
             recTds: parseInt(row[17]),
-            adp: parseInt(row[18]),
+            adp: 1000,
           }).save()
         )
       )
@@ -83,13 +83,14 @@ const generateAdp = () =>
       .on("data", async (row) => {
         try {
           const player = await Player.findOne({ where: { name: row[1] } });
+          const adp = parseInt(row[0]);
           if (player) {
-            await player?.update({ teamName: row[2], adp: parseInt(row[0]) });
+            await player?.update({ teamName: row[2], adp });
           } else {
             const positions: Position[] = ["QB", "RB", "WR", "TE", "K", "DST"];
             const position = positions.find((pos) => row[4].startsWith(pos));
             await new Player({
-              adp: parseInt(row[0]),
+              adp,
               name: row[1],
               teamName: row[2],
               position,

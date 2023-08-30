@@ -15,7 +15,7 @@ const TeamBox = (props: {
   const openSpots = props.benchSize - props.players.length;
   const availCash = props.totalBudget - spent;
   return (
-    <div class="border border-3 p-2 w-fit flex flex-col">
+    <div class=" hover:scale-[1.02]  border-secondary/20 border-2 p-2 flex flex-col bg-base-200">
       <div class="flex m-2 justify-between">
         <span class="font-bold">{props.manager.name}</span>
         <span>{openSpots} open </span>
@@ -45,7 +45,6 @@ const extractPlayerCircleData = (players: IPlayer[]) => {
     DST: 0,
   };
 
-  players.forEach((player) => console.log("player pos", player.position));
   players.forEach((player) => posCount[player.position]++);
   const playerCircles: IPlayerCircle[] = Object.keys(posCount).map((key) => {
     return {

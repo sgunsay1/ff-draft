@@ -1,0 +1,87 @@
+import { For, createEffect, createSignal } from "solid-js";
+import { IPlayer } from "@models/player";
+import { FiShare } from "solid-icons/fi";
+import { getPlayerNewsHref, getTeamHref, purchasePlayer } from "~/api/player";
+import { IManager } from "@models/manager";
+import { useQueryClient } from "@tanstack/solid-query";
+declare const window: any;
+const AuctionPlayerModal = (props: {
+  player: IPlayer;
+  managers: IManager[];
+}) => {
+  const [bid, setBid] = createSignal(1);
+  const [manager, setManager] = createSignal<number>(1);
+
+  const queryClient = useQueryClient();
+  return (
+    <>
+      <FiShare
+        class="text-xl font-extrabold hover:text-green-500"
+        onclick={() => window[`p_modal_${props.player.id}`].showModal()}
+      />
+      <dialog id={`p_modal_${props.player.id}`} class="modal">
+        <form method="dialog" class="modal-box">
+          <h3 class="text-xl flex flex-row space-x-2">
+            <a
+              class="link link-hover"
+              target="_blank"
+              href={getPlayerNewsHref(props.player.name)}
+            >
+              {props.player.name}
+            </a>
+            <div class=" text-base-content/50">
+              <a
+                class="link link-hover"
+                target="_blank"
+                href={getTeamHref(props.player.teamName)}
+              >
+                {props.player.teamName}
+              </a>
+              {" - "}
+              <span>{props.player.position}</span>
+            </div>
+          </h3>
+
+          <div class="py-4">
+            <label class="label">Manager</label>
+            <select
+              onchange={(e) => setManager(parseInt(e.target.value))}
+              class="select select-bordered w-full max-w-xs"
+            >
+              <option disabled selected>
+                Pick one...
+              </option>
+              <For each={props.managers}>
+                {(manager) => (
+                  <option value={manager.id}>{manager.name}</option>
+                )}
+              </For>
+            </select>
+
+            <label class="label">Bid</label>
+            <input
+              type="number"
+              value={bid()}
+              onchange={(e) => setBid(e.target.valueAsNumber)}
+              class="input input-bordered w-full max-w-xs"
+            />
+          </div>
+          <button
+            class="btn btn-primary"
+            onclick={async () => {
+              await purchasePlayer(manager(), props.player.id, bid());
+              queryClient.invalidateQueries();
+            }}
+          >
+            Purchase
+          </button>
+        </form>
+        <form method="dialog" class="modal-backdrop">
+          <button>hidden close</button>
+        </form>
+      </dialog>
+    </>
+  );
+};
+
+export default AuctionPlayerModal;

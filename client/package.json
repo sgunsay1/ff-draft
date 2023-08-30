@@ -31,7 +31,10 @@
   "dependencies": {
     "@solidjs/meta": "^0.28.2",
     "@solidjs/router": "^0.8.2",
+    "@tanstack/solid-query": "^4.33.0",
+    "@tanstack/solid-table": "^8.9.3",
     "axios": "^1.4.0",
+    "solid-icons": "^1.0.11",
     "solid-js": "^1.7.9",
     "solid-start": "^0.2.31",
     "undici": "^5.15.1"

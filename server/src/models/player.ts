@@ -6,12 +6,14 @@ import {
   Column,
   ForeignKey,
   Model,
+  PrimaryKey,
   Table,
 } from "sequelize-typescript";
 
 export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
 
 export interface IPlayer {
+  id: number;
   wishlist: boolean;
   price: number;
   name: string;
@@ -33,10 +35,14 @@ export interface IPlayer {
   recTds: number;
   fumbles: number;
   teamName: TeamName;
+  managerId?: number;
 }
 
 @Table
 export default class Player extends Model implements IPlayer {
+  @PrimaryKey
+  @Column
+  declare id: number;
   @Column
   declare wishlist: boolean;
   @Column

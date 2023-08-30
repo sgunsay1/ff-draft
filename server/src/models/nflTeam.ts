@@ -42,7 +42,7 @@ export type TeamName =
   | "WAS"
   | "NULL";
 
-type Bye = 5 | 6 | 7 | 9 | 10 | 11 | 13 | 14;
+export type Bye = 0 | 5 | 6 | 7 | 9 | 10 | 11 | 13 | 14;
 export interface INflTeam {
   name: TeamName;
   bye: Bye;

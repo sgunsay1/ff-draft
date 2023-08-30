@@ -20,10 +20,12 @@ type Story = StoryObj<typeof meta>;
 
 // More on writing stories with args: https://storybook.js.org/docs/7.0/solid/writing-stories/args
 const manager: IManager = {
+  id: 1,
   name: "Roger",
 };
 
 const player: IPlayer = {
+  id: 1,
   wishlist: false,
   price: 0,
   name: "",
@@ -50,6 +52,7 @@ const player: IPlayer = {
 const positions: Position[] = ["QB", "QB", "RB", "WR", "WR", "WR", "K"];
 
 const samplePlayer: IPlayer = {
+  id: 1,
   wishlist: false,
   price: 1,
   name: "",
@@ -76,7 +79,6 @@ const samplePlayer: IPlayer = {
 const players = positions.map((pos) => {
   const player = { ...samplePlayer };
   player.position = pos;
-  console.log("story player", player);
   return player;
 });
 

@@ -48,8 +48,10 @@ const PlayerController = {
       const { id } = req.params;
       const record = await Player.findOne({ where: { id } });
       if (!record) return res.json({ msg: "Can't find existing player" });
+      console.log("update body", req.body);
       const updatedRecord = await record.update({
         ...req.body,
+        totalPoints: record.totalPoints + 1,
       });
       return res.json(updatedRecord);
     } catch (e) {

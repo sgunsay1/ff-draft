@@ -19,7 +19,6 @@ const NflTeamController = {
   getAll: async (req: Request, res: Response) => {
     try {
       const records = await NflTeam.findAll();
-      console.log(records);
       res.json(records);
     } catch (e) {
       return res.json({
