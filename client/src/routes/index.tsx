@@ -12,26 +12,24 @@ import {
 } from "solid-start";
 import { getManagers } from "~/api/manager";
 import { getPlayers } from "~/api/player";
-import { getNumber } from "~/api/random";
 import { getTeams } from "~/api/team";
+import ManagerModal from "~/components/manager/ManagerModal";
 import TeamBox from "~/components/manager/TeamBox";
 import PlayerTable from "~/components/player/PlayerTable";
 import { TeamData } from "~/stories/player/teams.data";
 
-const BENCH_SIZE = 14;
+const BENCH_SIZE = 15;
 const TOTAL_BUDGET = 200;
 
 export const routeData = () => {
   const managers = createRouteData(getManagers, { key: ["managers"] });
   const players = createRouteData(getPlayers, { key: ["players"] });
   const teams = createRouteData(getTeams, { key: ["teams"] });
-  const number = createRouteData(getNumber, { key: ["number"] });
-  return { managers, players, teams, number };
+  return { managers, players, teams };
 };
 
 const Home = () => {
   const data = useRouteData<typeof routeData>();
-  const queryClient = useQueryClient();
   const mQuery = createQuery(() => ["managers"], getManagers);
   const managers = () => mQuery.data ?? [];
 
@@ -43,23 +41,21 @@ const Home = () => {
       >
         <For each={managers()}>
           {(manager, i) => (
-            <TeamBox
-              benchSize={BENCH_SIZE}
-              totalBudget={TOTAL_BUDGET}
-              manager={manager}
-              players={manager.players ?? []}
-            />
+            <ManagerModal teams={data.teams() ?? []} manager={manager}>
+              <TeamBox
+                benchSize={BENCH_SIZE}
+                totalBudget={TOTAL_BUDGET}
+                manager={manager}
+                players={manager.players ?? []}
+              />
+            </ManagerModal>
           )}
         </For>
       </div>
       <div class="w-full py-4">
         <div id="priceStrategy"></div>
         <div id="playerTable" class="h-full w-full overflow-y-auto">
-          <PlayerTable
-            teams={TeamData}
-            managers={managers() ?? []}
-            // filter="all"
-          />
+          <PlayerTable teams={TeamData} managers={managers} />
         </div>
       </div>
     </div>

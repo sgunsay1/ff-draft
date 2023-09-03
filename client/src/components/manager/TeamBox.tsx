@@ -21,9 +21,6 @@ const TeamBox = (props: {
         <span>{openSpots} open </span>
         <div class=" flex space-x-4">
           <span class="text-green-600 font-bold">${availCash}</span>
-          <span class="text-yellow-500 font-bold">
-            ${availCash - openSpots}
-          </span>
         </div>
       </div>
       <div class="flex space-x-2">

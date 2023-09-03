@@ -11,6 +11,7 @@ db.sync().then(async () => {
   await generateManagers();
   await generatePlayers();
   await generateAdp();
+  await generatePrices();
 });
 
 const generateTeams = async () =>
@@ -47,7 +48,7 @@ const generatePlayers = () =>
         players.push(
           new Player({
             wishlist: false,
-            price: 1,
+            price: 0,
             name: row[0],
             teamName: row[1],
             position: row[2],
@@ -102,4 +103,24 @@ const generateAdp = () =>
       })
       .on("error", (error) => reject(error.message));
     // .on("end", () => resolve(Promise.all(adp)));
+  });
+
+const generatePrices = () =>
+  new Promise((resolve, reject) => {
+    console.log("Seeding Prices");
+    const prices: Array<Promise<Player> | undefined> = [];
+    fs.createReadStream("./src/seeders/prices.csv")
+      .pipe(parse({ delimiter: "," }))
+      .on("data", async (row) => {
+        try {
+          const player = await Player.findOne({ where: { name: row[0] } });
+          const price = parseInt(row[1]);
+          if (player) {
+            await player?.update({ price });
+          }
+        } catch (e) {
+          console.error("error on " + row[0], e);
+        }
+      })
+      .on("error", (error) => reject(error.message));
   });

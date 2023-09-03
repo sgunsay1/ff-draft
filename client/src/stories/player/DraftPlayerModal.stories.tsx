@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "storybook-solidjs";
-import AuctionPlayerModal from "~/components/player/AuctionPlayerModal";
+import DraftPlayerModal from "~/components/player/DraftPlayerModal";
 import { PlayerData } from "~/stories/player/players.data";
 
 // More on how to set up stories at: https://storybook.js.org/docs/7.0/solid/writing-stories/introduction
 const meta = {
-  title: "Player/AuctionPlayerModal",
-  component: AuctionPlayerModal,
+  title: "Player/DraftPlayerModal",
+  component: DraftPlayerModal,
   tags: ["autodocs"],
-} satisfies Meta<typeof AuctionPlayerModal>;
+} satisfies Meta<typeof DraftPlayerModal>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

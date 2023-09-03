@@ -31,6 +31,7 @@
   "dependencies": {
     "@solidjs/meta": "^0.28.2",
     "@solidjs/router": "^0.8.2",
+    "@tanstack/match-sorter-utils": "^8.8.4",
     "@tanstack/solid-query": "^4.33.0",
     "@tanstack/solid-table": "^8.9.3",
     "axios": "^1.4.0",

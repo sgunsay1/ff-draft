@@ -13,7 +13,12 @@ export const purchasePlayer = (
   managerId: number,
   playerId: number,
   bid: number
-) => axios.put(`${SERVER}/${playerId}`, { managerId: managerId, price: bid });
+) =>
+  axios.put(`${SERVER}/${playerId}`, {
+    managerId: managerId,
+    price: bid,
+    wishlist: false,
+  });
 
 export const getTeamHref = (team: TeamName) =>
   `https://www.espn.com/nfl/team/depth/_/name/${team === "WAS" ? "wsh" : team}`;

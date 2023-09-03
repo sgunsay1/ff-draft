@@ -16,7 +16,7 @@ import {
   createSolidTable,
   getPaginationRowModel,
 } from "@tanstack/solid-table";
-import { createSignal, For, JSXElement, Show } from "solid-js";
+import { Accessor, createSignal, For, JSXElement, Show } from "solid-js";
 
 import {
   getPlayerNewsHref,
@@ -26,26 +26,40 @@ import {
 } from "~/api/player";
 import {
   QueryClient,
-  createMutation,
   createQuery,
   useQueryClient,
 } from "@tanstack/solid-query";
-import AuctionPlayerModal from "~/components/player/AuctionPlayerModal";
+import DraftPlayerModal from "~/components/player/DraftPlayerModal";
 import { getManagers } from "~/api/manager";
 import { IManager } from "@models/manager";
+import { classList } from "solid-js/web";
+import { generateByeMap } from "~/api/team";
 
-export type TableFilter = Position | "flex" | "all";
+export type TableFilter = Position | "FLEX" | "ALL";
 
-const PlayerTable = (props: { teams: INflTeam[]; managers: IManager[] }) => {
+const PlayerTable = (props: {
+  teams: INflTeam[];
+  managers: Accessor<IManager[]>;
+}) => {
   const [sorting, setSorting] = createSignal<SortingState>([]);
-  const [filter, setFilter] = createSignal<TableFilter>("all");
+  const [posFilter, setPosFilter] = createSignal<TableFilter>("ALL");
+  const [nameFilter, setNameFilter] = createSignal("");
+  const [showDrafted, setShowDrafted] = createSignal(false);
+  const [wishOnly, setWishOnly] = createSignal(false);
 
   const queryClient: QueryClient = useQueryClient();
   const pQuery = createQuery(() => ["players"], getPlayers);
-  const players = () => pQuery.data ?? [];
+  const players = () =>
+    (pQuery.data ?? []).filter(
+      (p) =>
+        p.name.toLowerCase().includes(nameFilter().toLowerCase()) &&
+        positionMatches(p.position, posFilter()) &&
+        (showDrafted() ? true : !p.managerId) &&
+        (wishOnly() ? p.wishlist : true)
+    );
 
   const shared = sharedCols(props.teams, queryClient, props.managers);
-  const unique = filteredCols(filter());
+  const unique = filteredCols(posFilter());
   const columns: ColumnDef<IPlayer>[] = [...shared, ...unique];
 
   const table = createSolidTable({
@@ -65,9 +79,51 @@ const PlayerTable = (props: { teams: INflTeam[]; managers: IManager[] }) => {
     debugTable: true,
   });
   table.setPageSize(50);
+
   return (
     <div class="w-full">
-      <table class="table w-full table-sm table-zebra table-pin-rows">
+      <div class="flex flex-row space-x-4 p-4 items-center">
+        <select
+          onchange={(e) => setPosFilter(e.target.value as TableFilter)}
+          class="select select-bordered "
+        >
+          <option value="ALL">ALL</option>
+          <option value="FLEX">FLEX</option>
+          <option value="QB">QB</option>
+          <option value="RB">RB</option>
+          <option value="WR">WR</option>
+          <option value="TE">TE</option>
+          <option value="K">K</option>
+          <option value="DST">DST</option>
+        </select>
+        <input
+          value={nameFilter() ?? ""}
+          onChange={(e) => setNameFilter(e.target.value)}
+          class="input input-bordered input-primary"
+          placeholder="Search all columns..."
+        />
+
+        <label class="label cursor-pointer flex flex-col">
+          <span class="label-text">Drafted</span>
+          <input
+            type="checkbox"
+            onclick={() => setShowDrafted(!showDrafted())}
+            checked={showDrafted()}
+            class="checkbox checkbox-primary"
+          />
+        </label>
+        <label class="label cursor-pointer flex flex-col">
+          <span class="label-text">Wishlist</span>
+          <input
+            type="checkbox"
+            onclick={() => setWishOnly(!wishOnly())}
+            checked={wishOnly()}
+            class="checkbox checkbox-primary"
+          />
+        </label>
+      </div>
+
+      <table class="table w-full table-sm  table-pin-rows bg-base-200">
         <thead>
           <For each={table.getHeaderGroups()}>
             {(headerGroup) => (
@@ -106,20 +162,27 @@ const PlayerTable = (props: { teams: INflTeam[]; managers: IManager[] }) => {
         </thead>
         <tbody>
           <For each={table.getRowModel().rows.slice(0, 50)}>
-            {(row) => (
-              <tr class="hover">
-                <For each={row.getVisibleCells()}>
-                  {(cell) => (
-                    <td>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  )}
-                </For>
-              </tr>
-            )}
+            {(row) => {
+              const drafted = () => !!players()[row.index].managerId;
+              const classNames = drafted()
+                ? "bg-warning text-content"
+                : "hover:bg-base-300";
+
+              return (
+                <tr class={classNames}>
+                  <For each={row.getVisibleCells()}>
+                    {(cell) => (
+                      <td>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    )}
+                  </For>
+                </tr>
+              );
+            }}
           </For>
         </tbody>
       </table>
@@ -191,20 +254,12 @@ const PlayerTable = (props: { teams: INflTeam[]; managers: IManager[] }) => {
 };
 
 //#region helper functions
-const generateByeMap = (teams: INflTeam[]) =>
-  new Map<TeamName, Bye>(teams.map((team) => [team.name, team.bye]));
 
 const sharedCols = (
   teams: INflTeam[],
   queryClient: QueryClient,
-  managers: IManager[]
+  managers: Accessor<IManager[]>
 ) => {
-  interface NameCol {
-    id: number;
-    name: string;
-    pos: Position;
-    team: TeamName;
-  }
   interface WishCol {
     id: number;
     wishlist: boolean;
@@ -248,9 +303,10 @@ const sharedCols = (
       id: "player",
       cell: (row) => {
         const data = row.getValue<IPlayer>();
+
         return (
           <div class="flex flex-row space-x-2">
-            <AuctionPlayerModal player={data} managers={managers} />
+            <DraftPlayerModal player={data} managers={managers} />
 
             <a
               class="link link-hover"
@@ -395,5 +451,16 @@ const filteredCols = (filter: TableFilter) => {
 };
 
 //#endregion helper functions
+
+const positionMatches = (pos: Position, filter: TableFilter) => {
+  switch (filter) {
+    case "ALL":
+      return true;
+    case "FLEX":
+      return pos === "RB" || pos === "WR" || pos === "TE";
+    default:
+      return pos === filter;
+  }
+};
 
 export default PlayerTable;
