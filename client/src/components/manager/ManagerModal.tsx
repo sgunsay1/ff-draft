@@ -1,15 +1,67 @@
-import { For, JSXElement, children } from "solid-js";
+import {
+  Accessor,
+  For,
+  JSXElement,
+  Show,
+  children,
+  createSignal,
+} from "solid-js";
 import { IManager } from "@models/manager";
 import { generateByeMap } from "~/api/team";
 import { INflTeam } from "@models/nflTeam";
-import { getPlayerNewsHref, getTeamHref } from "~/api/player";
+import { getPlayerNewsHref, getTeamHref, removePlayer } from "~/api/player";
 import { IPlayer } from "@models/player";
+import { AiOutlineEdit, AiOutlineSave } from "solid-icons/ai";
+import { FiEdit3, FiSave, FiTrash } from "solid-icons/fi";
+import { useQueryClient } from "@tanstack/solid-query";
+import DraftPlayerModal from "~/components/player/DraftPlayerModal";
+import { updateManagerName } from "~/api/manager";
 declare const window: any;
+const ManagerEditableName = (props: { manager: IManager }) => {
+  const [managerName, setManagerName] = createSignal(props.manager.name);
+  const [editing, setEditing] = createSignal(false);
+  const queryClient = useQueryClient();
+  const handleSave = async () => {
+    setEditing(false);
+    await updateManagerName(props.manager.id, managerName());
+    queryClient.invalidateQueries();
+  };
+  return (
+    <Show
+      when={editing()}
+      fallback={
+        <div class="flex space-x-2 items-center">
+          <h3 class="text-xl flex flex-row space-x-2">{props.manager.name}</h3>
+          <FiEdit3
+            class=" text-2xl font-extrabold hover:text-info"
+            onclick={() => setEditing(true)}
+          />
+        </div>
+      }
+    >
+      <div class="flex space-x-2 items-center">
+        <input
+          value={managerName()}
+          onchange={(e) => setManagerName(e.target.value)}
+          class="input input-bordered w-full max-w-xs"
+        />
+        <FiSave
+          class="text-2xl font-extrabold hover:text-info"
+          onclick={handleSave}
+        />
+      </div>
+    </Show>
+  );
+};
+
 const ManagerModal = (props: {
+  managers: Accessor<IManager[]>;
   manager: IManager;
   teams: INflTeam[];
   children: JSXElement;
 }) => {
+  const queryClient = useQueryClient();
+
   const c = children(() => props.children);
   const byeMap = generateByeMap(props.teams);
   const sortByes = (p1: IPlayer, p2: IPlayer) =>
@@ -31,9 +83,15 @@ const ManagerModal = (props: {
       props.manager.players?.filter((p) => p.position === "K") ?? []
     ).sort(sortByes);
     const dsts =
-      props.manager.players?.filter((p) => p.position === "DST") ?? [];
+      props.manager.players?.filter((p) => p.position === "DEF") ?? [];
     return [qbs, rbs, wrs, tes, ks, dsts].flat();
   };
+
+  const handleRemove = async (playerId: number) => {
+    await removePlayer(playerId);
+    queryClient.invalidateQueries();
+  };
+
   return (
     <>
       <div onclick={() => window[`m_modal_${props.manager.id}`].showModal()}>
@@ -42,7 +100,7 @@ const ManagerModal = (props: {
 
       <dialog id={`m_modal_${props.manager.id}`} class="modal">
         <form method="dialog" class="modal-box">
-          <h3 class="text-xl flex flex-row space-x-2">{props.manager.name}</h3>
+          <ManagerEditableName manager={props.manager} />
           <div class="py-4">
             <table class="table">
               <thead>
@@ -51,6 +109,7 @@ const ManagerModal = (props: {
                   <td>POS</td>
                   <td>Player</td>
                   <td>Price</td>
+                  <td></td>
                 </tr>
               </thead>
               <For each={players()}>
@@ -77,6 +136,22 @@ const ManagerModal = (props: {
                       </div>
                     </td>
                     <td>${player.price}</td>
+                    <td class="flex space-x-2">
+                      <DraftPlayerModal
+                        onclick={() =>
+                          window[`m_modal_${props.manager.id}`].close()
+                        }
+                        player={player}
+                        managers={props.managers}
+                      />
+
+                      <button>
+                        <FiTrash
+                          class="text-xl font-extrabold hover:text-error"
+                          onclick={() => handleRemove(player.id)}
+                        />
+                      </button>
+                    </td>
                   </tr>
                 )}
               </For>

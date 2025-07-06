@@ -8,7 +8,8 @@
     "dev": "ts-node-dev --respawn src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "db:seed": "ts-node-dev src/seeders/index.ts"
+    "db:seed": "ts-node-dev src/seeders/index.ts",
+    "db:reset": "ts-node-dev src/operations/index.ts"
   },
   "author": "",
   "license": "ISC",

@@ -10,12 +10,14 @@ import {
   Table,
 } from "sequelize-typescript";
 
-export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DST";
+export type Position = "QB" | "RB" | "WR" | "TE" | "K" | "DEF";
 
 export interface IPlayer {
   id: number;
   wishlist: boolean;
   price: number;
+  tier?: number;
+  suggestedPrice: number;
   name: string;
   adp: number;
   position: Position;
@@ -48,9 +50,13 @@ export default class Player extends Model implements IPlayer {
   @Column
   declare price: number;
   @Column
+  declare suggestedPrice: number;
+  @Column
   declare name: string;
   @Column
   declare adp: number;
+  @Column
+  declare tier: number;
   @Column
   declare position: Position;
   @Column

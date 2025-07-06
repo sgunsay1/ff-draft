@@ -39,7 +39,7 @@ const extractPlayerCircleData = (players: IPlayer[]) => {
     WR: 0,
     TE: 0,
     K: 0,
-    DST: 0,
+    DEF: 0,
   };
 
   players.forEach((player) => posCount[player.position]++);

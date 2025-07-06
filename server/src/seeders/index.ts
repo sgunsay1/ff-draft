@@ -5,13 +5,81 @@ import NflTeam from "../models/nflTeam";
 import Manager from "../models/manager";
 import Player, { Position } from "../models/player";
 
+export interface Passing {
+  passYds: number;
+  passTD: number;
+  interceptions: number;
+}
+
+export interface Receiving {
+  rec: number;
+  recYds: number;
+  recTds: number;
+  recTgts: number;
+}
+
+export interface Rushing {
+  rushAtt: number;
+  rushYds: number;
+  rushTds: number;
+}
+
+export interface Kicking {
+  fg019: number;
+  fg2029: number;
+  fg3039: number;
+  fg4049: number;
+  fg50: number;
+  fgm019: number;
+  fgm2029: number;
+  fgm3039: number;
+  fgm4049: number;
+  fgm50: number;
+  pat: number;
+}
+
+export interface Defense {
+  ptsAllowed: number;
+  sack: number;
+  safety: number;
+  defInt: number;
+  fumRec: number;
+  defTd: number;
+  blkKick: number;
+  stopOnDowns: number;
+  ydsAllowed: number;
+  retTd: number;
+}
+
+export interface Offense extends Passing, Receiving, Rushing {
+  fumLost: number;
+  twoPt: number;
+  retTds: number;
+}
+
+export interface ScrapedPlayer
+  extends Partial<Offense>,
+    Partial<Kicking>,
+    Partial<Defense> {
+  id: string;
+  name: string;
+  team: string;
+  pos: string;
+  bye: number;
+  tier?: number;
+  fantansyPoints: number;
+  preRank: number;
+  actualRank: number;
+  gamesPlayed: number;
+  projCost?: number;
+}
+
 db.sync().then(async () => {
   console.log("connected to db");
   await generateTeams();
   await generateManagers();
   await generatePlayers();
-  await generateAdp();
-  await generatePrices();
+  console.log("yaba");
 });
 
 const generateTeams = async () =>
@@ -20,13 +88,13 @@ const generateTeams = async () =>
     const teams: Promise<NflTeam>[] = [];
     fs.createReadStream("./src/seeders/team.csv")
       .pipe(parse({ delimiter: "," }))
-      .on("data", (row) =>
-        teams.push(new NflTeam({ name: row[0], bye: parseInt(row[1]) }).save())
-      )
+      .on("data", (row) => {
+        teams.push(new NflTeam({ name: row[0], bye: parseInt(row[1]) }).save());
+      })
       .on("error", (error) => reject(error.message))
       .on("end", () => resolve(Promise.all(teams)));
   });
-const generateManagers = () =>
+const generateManagers = async () =>
   new Promise((resolve, reject) => {
     console.log("Seeding Managers");
     const managers: Promise<Manager>[] = [];
@@ -38,89 +106,38 @@ const generateManagers = () =>
       .on("end", () => resolve(Promise.all(managers)));
   });
 
-const generatePlayers = () =>
-  new Promise((resolve, reject) => {
+const generatePlayers = async () =>
+  await new Promise((resolve, reject) => {
     console.log("Seeding Players");
-    const players: Promise<Player>[] = [];
-    fs.createReadStream("./src/seeders/players.csv")
-      .pipe(parse({ delimiter: "," }))
-      .on("data", (row) =>
-        players.push(
-          new Player({
-            wishlist: false,
-            price: 0,
-            name: row[0],
-            teamName: row[1],
-            position: row[2],
-            totalPoints: parseFloat(row[3]),
-            pointsPerGame: parseFloat(row[4]),
-            gamesPlayed: parseInt(row[5]),
-            completions: parseInt(row[6]),
-            passYards: parseInt(row[7]),
-            passTds: parseInt(row[8]),
-            interceptions: parseInt(row[9]),
-            rushAttempts: parseInt(row[10]),
-            rushYards: parseInt(row[11]),
-            rushTds: parseInt(row[12]),
-            fumbles: parseInt(row[13]),
-            targets: parseInt(row[14]),
-            receptions: parseInt(row[15]),
-            recYards: parseInt(row[16]),
-            recTds: parseInt(row[17]),
-            adp: 1000,
-          }).save()
-        )
-      )
-      .on("error", (error) => reject(error.message))
-      .on("end", () => resolve(Promise.all(players)));
-  });
+    const file = fs.readFileSync("./src/seeders/players.json", "utf8");
+    const players = JSON.parse(file).map((player: ScrapedPlayer) => {
+      const ppg = (player.fantansyPoints / player.gamesPlayed).toFixed(2);
+      return new Player({
+        wishlist: false,
+        price: 0,
+        tier: player.tier,
+        suggestedPrice: player.projCost,
+        name: player.name,
+        teamName: player.team,
+        position: player.pos,
+        totalPoints: player.fantansyPoints,
+        pointsPerGame: ppg == "NaN" ? undefined : ppg,
+        gamesPlayed: player.gamesPlayed,
+        completions: 0,
+        passYards: player.passYds,
+        passTds: player.passTD,
+        interceptions: player.interceptions,
+        rushAttempts: player.rushAtt,
+        rushYards: player.rushYds,
+        rushTds: player.rushTds,
+        fumbles: player.fumLost,
+        targets: player.recTgts,
+        receptions: player.rec,
+        recYards: player.recYds,
+        recTds: player.recTds,
+        adp: player.preRank,
+      }).save();
+    });
 
-const generateAdp = () =>
-  new Promise((resolve, reject) => {
-    console.log("Seeding ADP");
-    const adp: Array<Promise<Player> | undefined> = [];
-    fs.createReadStream("./src/seeders/adp.csv")
-      .pipe(parse({ delimiter: "," }))
-      .on("data", async (row) => {
-        try {
-          const player = await Player.findOne({ where: { name: row[1] } });
-          const adp = parseInt(row[0]);
-          if (player) {
-            await player?.update({ teamName: row[2], adp });
-          } else {
-            const positions: Position[] = ["QB", "RB", "WR", "TE", "K", "DST"];
-            const position = positions.find((pos) => row[4].startsWith(pos));
-            await new Player({
-              adp,
-              name: row[1],
-              teamName: row[2],
-              position,
-            }).save();
-          }
-        } catch (e) {
-          console.error("error on " + row[1], e);
-        }
-      })
-      .on("error", (error) => reject(error.message));
-    // .on("end", () => resolve(Promise.all(adp)));
-  });
-
-const generatePrices = () =>
-  new Promise((resolve, reject) => {
-    console.log("Seeding Prices");
-    const prices: Array<Promise<Player> | undefined> = [];
-    fs.createReadStream("./src/seeders/prices.csv")
-      .pipe(parse({ delimiter: "," }))
-      .on("data", async (row) => {
-        try {
-          const player = await Player.findOne({ where: { name: row[0] } });
-          const price = parseInt(row[1]);
-          if (player) {
-            await player?.update({ price });
-          }
-        } catch (e) {
-          console.error("error on " + row[0], e);
-        }
-      })
-      .on("error", (error) => reject(error.message));
+    resolve(Promise.all(players));
   });

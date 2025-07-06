@@ -20,6 +20,12 @@ export const purchasePlayer = (
     wishlist: false,
   });
 
+export const removePlayer = (playerId: number) =>
+  axios.put(`${SERVER}/${playerId}`, {
+    managerId: null,
+    price: 0,
+  });
+
 export const getTeamHref = (team: TeamName) =>
   `https://www.espn.com/nfl/team/depth/_/name/${team === "WAS" ? "wsh" : team}`;
 

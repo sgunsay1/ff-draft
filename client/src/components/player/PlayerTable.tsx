@@ -4,6 +4,7 @@ import {
   AiFillStar,
   AiOutlineStar,
 } from "solid-icons/ai";
+import { FaSolidRankingStar } from "solid-icons/fa";
 import { FiShare } from "solid-icons/fi";
 import NflTeam, { Bye, INflTeam, TeamName } from "@models/nflTeam";
 import { IPlayer, Position } from "@models/player";
@@ -37,11 +38,22 @@ import { generateByeMap } from "~/api/team";
 
 export type TableFilter = Position | "FLEX" | "ALL";
 
+const sort = (defaultNum: number, a?: number, b?: number) => {
+  const numA = a ?? defaultNum;
+  const numB = b ?? defaultNum;
+  return numA > numB ? 1 : numA < numB ? -1 : 0;
+};
+
 const PlayerTable = (props: {
   teams: INflTeam[];
   managers: Accessor<IManager[]>;
 }) => {
-  const [sorting, setSorting] = createSignal<SortingState>([]);
+  const [sorting, setSorting] = createSignal<SortingState>([
+    {
+      id: "adp",
+      desc: false,
+    },
+  ]);
   const [posFilter, setPosFilter] = createSignal<TableFilter>("ALL");
   const [nameFilter, setNameFilter] = createSignal("");
   const [showDrafted, setShowDrafted] = createSignal(false);
@@ -59,14 +71,19 @@ const PlayerTable = (props: {
     );
 
   const shared = sharedCols(props.teams, queryClient, props.managers);
-  const unique = filteredCols(posFilter());
-  const columns: ColumnDef<IPlayer>[] = [...shared, ...unique];
+  const unique = () => filteredCols(posFilter());
+  const columns: Accessor<ColumnDef<IPlayer>[]> = () => [
+    ...shared,
+    ...unique(),
+  ];
 
   const table = createSolidTable({
     get data() {
       return players();
     },
-    columns,
+    get columns() {
+      return columns();
+    },
     state: {
       get sorting() {
         return sorting();
@@ -94,7 +111,7 @@ const PlayerTable = (props: {
           <option value="WR">WR</option>
           <option value="TE">TE</option>
           <option value="K">K</option>
-          <option value="DST">DST</option>
+          <option value="DEF">DEF</option>
         </select>
         <input
           value={nameFilter() ?? ""}
@@ -164,12 +181,18 @@ const PlayerTable = (props: {
           <For each={table.getRowModel().rows.slice(0, 50)}>
             {(row) => {
               const drafted = () => !!players()[row.index].managerId;
-              const classNames = drafted()
-                ? "bg-warning text-content"
+              const tier = players()[row.index].tier;
+              ("bg-row-tier-1 hover:bg-row-tier-1-hover bg-row-tier-2 hover:bg-row-tier-2-hover bg-row-tier-3 hover:bg-row-tier-3-hover bg-row-tier-4 hover:bg-row-tier-4-hover bg-row-tier-5 hover:bg-row-tier-5-hover bg-row-tier-6 hover:bg-row-tier-6-hover bg-row-tier-7 hover:bg-row-tier-7-hover bg-row-tier-8 hover:bg-row-tier-8-hover bg-row-tier-9 hover:bg-row-tier-9-hover bg-row-tier-10 hover:bg-row-tier-10-hover");
+
+              const tierStyle = !!tier
+                ? `bg-row-tier-${tier} hover:bg-row-tier-${tier}-hover`
                 : "hover:bg-base-300";
 
+              const classNames = () =>
+                drafted() ? "bg-warning text-content" : tierStyle;
+
               return (
-                <tr class={classNames}>
+                <tr class={classNames()}>
                   <For each={row.getVisibleCells()}>
                     {(cell) => (
                       <td>
@@ -295,6 +318,19 @@ const sharedCols = (
       accessorKey: "adp",
       cell: (data) => data.getValue(),
       header: () => <span>ADP</span>,
+      sortDescFirst: false,
+    },
+    {
+      accessorKey: "tier",
+      cell: (data) => data.getValue() ?? 11,
+      header: () => <FaSolidRankingStar />,
+      sortingFn: (a, b) => sort(100, a.original.tier, b.original.tier),
+      sortDescFirst: false,
+    },
+    {
+      accessorKey: "suggestedPrice",
+      cell: (data) => data.getValue(),
+      header: () => <span>Avg. $</span>,
     },
     {
       accessorFn: (row) => ({
@@ -336,6 +372,12 @@ const sharedCols = (
       id: "bye",
       cell: (teamName) => byeMap.get(teamName.getValue<TeamName>()),
       header: () => <span>Bye</span>,
+      sortingFn: (a, b) =>
+        sort(
+          0,
+          byeMap.get(a.original.teamName),
+          byeMap.get(b.original.teamName)
+        ),
     },
     {
       accessorKey: "totalPoints",
@@ -351,6 +393,8 @@ const sharedCols = (
       accessorKey: "gamesPlayed",
       cell: (data) => data.getValue(),
       header: () => <span>GP</span>,
+      sortingFn: (a, b) =>
+        sort(0, a.original.gamesPlayed, b.original.gamesPlayed),
     },
   ];
 
@@ -362,17 +406,21 @@ const qbCols = () => {
     {
       accessorKey: "passYards",
       cell: (data) => data.getValue(),
-      header: () => <span>Pass Yds</span>,
+      header: () => <span>Pass</span>,
+      sortingFn: (a, b) => sort(0, a.original.passYards, b.original.passYards),
     },
     {
       accessorKey: "passTds",
       cell: (data) => data.getValue(),
-      header: () => <span>Pass TD</span>,
+      header: () => <span>P TD</span>,
+      sortingFn: (a, b) => sort(0, a.original.passTds, b.original.passTds),
     },
     {
       accessorKey: "interceptions",
       cell: (data) => data.getValue(),
       header: () => <span>Int</span>,
+      sortingFn: (a, b) =>
+        sort(0, a.original.interceptions, b.original.interceptions),
     },
   ];
   return cols;
@@ -383,7 +431,7 @@ const wrCols = () => {
     {
       accessorKey: "targets",
       cell: (data) => data.getValue(),
-      header: () => <span>Targets</span>,
+      header: () => <span>Tgts</span>,
     },
     {
       accessorKey: "receptions",
@@ -443,7 +491,7 @@ const filteredCols = (filter: TableFilter) => {
     case "WR":
       return [...wrCols(), ...rbCols(), ...qbCols(), fumb];
     case "K":
-    case "DST":
+    case "DEF":
       return [];
     default: //qb or all others
       return [...qbCols(), ...wrCols(), ...rbCols(), fumb];

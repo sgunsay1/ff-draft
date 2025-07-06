@@ -8,40 +8,50 @@ declare const window: any;
 const DraftPlayerModal = (props: {
   player: IPlayer;
   managers: Accessor<IManager[]>;
+  onclick?: () => void;
 }) => {
   const [bid, setBid] = createSignal(props.player.price);
   const [manager, setManager] = createSignal<number>(1);
 
-  createEffect(() => console.log("managers: ", props.managers()));
   const queryClient = useQueryClient();
   return (
     <>
       <FiShare
-        class="text-xl font-extrabold hover:text-green-500"
-        onclick={() => window[`p_modal_${props.player.id}`].showModal()}
+        class="text-xl font-extrabold hover:text-info"
+        onclick={() => {
+          props.onclick ? props.onclick() : [];
+          window[`p_modal_${props.player.id}`].showModal();
+        }}
       />
       <dialog id={`p_modal_${props.player.id}`} class="modal">
         <form method="dialog" class="modal-box">
-          <h3 class="text-xl flex flex-row space-x-2">
-            <a
-              class="link link-hover"
-              target="_blank"
-              href={getPlayerNewsHref(props.player.name)}
-            >
-              {props.player.name}
-            </a>
-            <div class=" text-base-content/50">
-              <a
-                class="link link-hover"
-                target="_blank"
-                href={getTeamHref(props.player.teamName)}
-              >
-                {props.player.teamName}
-              </a>
-              {" - "}
-              <span>{props.player.position}</span>
+          <div class="flex flex-row justify-between">
+            <div>
+              <h3 class="text-xl flex flex-row space-x-2">
+                <a
+                  class="link link-hover"
+                  target="_blank"
+                  href={getPlayerNewsHref(props.player.name)}
+                >
+                  {props.player.name}
+                </a>
+                <div class=" text-base-content/50">
+                  <a
+                    class="link link-hover"
+                    target="_blank"
+                    href={getTeamHref(props.player.teamName)}
+                  >
+                    {props.player.teamName}
+                  </a>
+                  {" - "}
+                  <span>{props.player.position}</span>
+                </div>
+              </h3>
             </div>
-          </h3>
+            <span class="text-xl  text-success">
+              ${props.player.suggestedPrice}
+            </span>
+          </div>
 
           <div class="py-4 flex flex-col space-y-4">
             <label class="label">Manager</label>
